@@ -136,9 +136,8 @@ module PE1(clk , data ,fin , reset);
     wire [IntSize-1:0] out_m14;
     wire [IntSize-1:0] out_m7 ;
     
-    maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.n_pic2(out_m14));
-    //TODO: fix this module 
-    maxpool7x7 m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.n_pic2(out_m7));
+    maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.out(out_m14))  ;
+    maxpool7x7    m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.out(out_m7));
 
 always @(posedge clk or posedge reset ) begin
     if(reset)begin

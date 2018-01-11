@@ -1,11 +1,17 @@
-module maxpool14x14(data,maxPoolState,n_pic2);
+module maxpool14x14(data,maxPoolState,out);
     input data;
     input maxPoolState;
     output n_pic2;
+    
+    
+    
+    wire [20:0] maxPoolState;
+    wire [IntSize*196-1:0] data;
+    wire[7:0] out;
+    reg[7:0] in1,in2,in3,in4;
+    maxPool2x2 mP1(.in1(in1),.in2(in2),.in3(in3),.in4(in4),.out1(out));    
 
-wire out1;
-reg in1,in2,in3,in4;
-maxPool2x2 mP1(in1,in2,in3,in4,out1);    
+
 always @* begin
 
   case(maxPoolState)
