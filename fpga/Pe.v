@@ -4,12 +4,12 @@ module Main(
     input reset,
     
     input rx,
-    output tx
+    output tx,
 
     output [4:0] state_led,
     output [3:0] ANSWER,
 
-    output number_valid 
+    output reg number_valid 
 ); 
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
@@ -22,7 +22,7 @@ module Main(
     wire tx_busy,rx_rdy;
     reg [7:0] tx_data;
     reg tx_en;
-    reg clk_9600;
+    wire clk_9600;
     rs232 RS232(
         .clk(clk),
         .rst(rst),
@@ -41,16 +41,8 @@ module Main(
     
     //  FileInfo Module
     wire [15:0] file_size,memory_start,memory_end;
-    file_info FI({file[0],file[1]},file_size,memory_start,memory_end);
+    file_info FI(file,file_size,memory_start,memory_end);
 
-
-    parameter IntSize   =   8;
-    parameter CoreSize  =  25;
-    parameter PicSize1  = 784;
-    parameter PicSize2  = 196;
-    parameter PicSize3  =  49;
-
-    
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
     reg [20:0] cal_cnt , n_cal_cnt ;
@@ -76,12 +68,10 @@ module Main(
     parameter [4:0] FIN              = 5'd15;
     parameter [4:0] CAL_ADD          = 5'd16;
     parameter [4:0] CAL_MULTI        = 5'd17;
-    parameter [4:0] IO_FIN           = 5'd18;
-
-    reg [11:0] FileIndex    ,   n_FileIndex    ;
+    parameter [4:0] FIND_MAX         = 5'd18;
+    parameter [4:0] IO_FIN           = 5'd19;
     
-    parameter READ = 0;
-    parameter WRITE = 1;
+    //TODO IO_CLK SHANGE
     
     reg [IntSize-1:0] n_max , max;
     reg [3:0] n_ans , ans;
@@ -90,9 +80,12 @@ module Main(
     reg [15:0] bufferpos         ,   n_bufferpos       ;
    
     reg [15:0] FileIndex    ,   n_FileIndex    ;
-    reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
     reg [4:0] Temp_state    ,   n_Temp_state   ;
     reg [20:0] Tcnter       ,   n_Tcnter       ;
+    
+    reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
+    parameter READ = 2'b10;
+    parameter WRITE = 2'b01;
 
     //TOD ram memory 
 
@@ -160,7 +153,6 @@ end
 
 
 always @* begin
-    n_file      = file      ;
     n_state     = state     ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
@@ -185,7 +177,7 @@ always @* begin
         
         SEND_HEAD:begin
             if(!tx_busy)begin
-                tx_data = (readwrite == READ) ? 8'd82 : 8'd87; // R : W
+                tx_data = (ReadWrite == READ) ? 8'd82 : 8'd87; // R : W
                 n_state = WAIT_FOR_UPLOAD;
                 n_upload_tmp_state = SEND_FILE_INDEX;
                 n_bufferpos = 0;
@@ -198,10 +190,9 @@ always @* begin
                     n_bufferpos = bufferpos + 1;
                     n_state = WAIT_FOR_UPLOAD;
                     n_upload_tmp_state = SEND_FILE_INDEX;
-                end else if(bufferpos >= 2)begin
-                    n_state = (readwrite == READ) ? READ_GET_BYTE : WRITE_SEND_BYTE;    
-                    n_bufferpos = memory_start;
-                end
+            end else if(bufferpos >= 2)begin
+                n_state = (ReadWrite == READ) ? READ_GET_BYTE : WRITE_SEND_BYTE;    
+                n_bufferpos = memory_start;
             end
         end
 
@@ -233,7 +224,7 @@ always @* begin
         end
 
         IO_FIN:begin
-            next_state = Temp_state;
+            n_state = Temp_state;
         end
 
         CAL_CONV:begin
@@ -475,7 +466,7 @@ always @* begin
                 n_ReadWrite = 2'b10          ;
                 n_Temp_state= CAL_MAXPOOL    ;
             end
-
+        end
 
         STAGE2_CHECK_END:begin
             //SAVE Wegiht 

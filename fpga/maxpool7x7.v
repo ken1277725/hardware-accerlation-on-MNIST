@@ -1,7 +1,8 @@
-module maxpool14x14(data,maxPoolState,out);
+module maxpool7x7(data,maxPoolState,out);
+    parameter IntSize = 8;
     input data;
     input maxPoolState;
-    output n_pic2;
+    output out;
     
     
     

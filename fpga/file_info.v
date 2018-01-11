@@ -1,9 +1,8 @@
 
 module file_info(
     input [15:0] file,
-    output [15:0] file_size,
-    output [15:0] memory_start,
-    output [15:0] memory_end
+    output reg [15:0] memory_start,
+    output reg [15:0] memory_end
 );
 
     always @(*) begin

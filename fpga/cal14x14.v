@@ -1,14 +1,10 @@
 module conv14x14(data , dPstate , core ,out);
     parameter ArraySize = 25;
     parameter   IntSize =  8;
-    input data;
-    input dPstate;
-    input core ;
-    output out;
-    wire [196*IntSize-1:0] data;
-    wire [20:0] dPstate;
-    wire [ArraySize*IntSize-1:0] core;
-    wire [7:0] out;
+    input  wire [196*IntSize-1:0] data;
+    input  wire [20:0] dPstate;
+    input  wire [ArraySize*IntSize-1:0] core;
+    output wire [7:0] out;
     reg  [ArraySize*IntSize-1:0]  dPIn;
 
 
@@ -16,7 +12,7 @@ module conv14x14(data , dPstate , core ,out);
 dotProduct dot1(.in1(dPIn) , .in2(core) , .out(out)); 
 
 always @* begin
-case(dPState)
+case(dPstate)
 0 :begin
  dPIn = {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,data[7:0] ,data[15:8] ,data[23:16] ,0 ,0 ,data[119:112] ,data[127:120] ,data[135:128] ,0 ,0 ,data[231:224] ,data[239:232] ,data[247:240] };
 end
