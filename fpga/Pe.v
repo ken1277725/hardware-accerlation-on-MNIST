@@ -5,6 +5,9 @@ module Main(
     
     input rx,
     output tx
+
+    output [4:0] state_led,
+    output [4:0] ANSWER
 ); 
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
@@ -38,39 +41,7 @@ module Main(
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI({file[0],file[1]},file_size,memory_start,memory_end);
 
-    reg [5:0]main_tmp_state,next_main_tmp_state;
-    reg [5:0]upload_tmp_state,next_upload_tmp_state;
-    reg [5:0]state,next_state;
-    reg [7:0]bufferpos,next_bufferpos;
-    reg readwrite,next_readwrite; // read = 0
-    parameter READ = 0;
-    parameter WRITE = 1;
-   
-    clk = base_9600;
-    always @(*) begin
-        next_state = state;
-        next_main_tmp_state = main_tmp_state;
-        next_upload_tmp_state = upload_tmp_state;
-        next_bufferpos = bufferpos;
-        next_readwrite = readwrite;
-        case(state)
 
-        endcase 
-    end
-
-endmodule
-
-
-
-module PE1(clk , data ,fin , reset); 
-    
-    //
-    
-    input clk;
-    input reset; 
-    output fin;
-
-    //    
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
     parameter PicSize1  = 784;
@@ -82,6 +53,8 @@ module PE1(clk , data ,fin , reset);
     reg [4:0] state , n_state ;
     reg [20:0] cal_cnt , n_cal_cnt ;
 
+    assign state_led = state;
+    
     //parameter for state : 
     parameter [4:0] IDLE              = 5'd0;
     parameter [4:0] STAGE1            = 5'd1;
@@ -198,6 +171,10 @@ always @* begin
     case(state)
         IDLE:begin
             n_Tcnter = 0;
+            n_state = IO;
+            n_FileIndex = 0;
+            n_ReadWrite = READ;
+            n_Temp_state = CAL_CONV; 
         end
         
         IO:begin
@@ -234,6 +211,7 @@ always @* begin
                 n_state = IO_FIN;
             end
         end
+        
         WRITE_SEND_BYTE:begin
             if(!tx_busy && bufferpos <= memory_end)begin
                 tx_data = memory[bufferpos];
@@ -244,12 +222,14 @@ always @* begin
                 n_state = IO_FIN;    
             end
         end
+        
         WAIT_FOR_UPLOAD:begin
             tx_en = 1;
             if(!tx_busy)begin
                 n_state = upload_tmp_state;
             end
         end
+
         IO_FIN:begin
             next_state = Temp_state;
         end
