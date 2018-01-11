@@ -6,7 +6,6 @@ module Main(
     input rx,
     output tx
 ); 
-    //parameter bandWidth = 128;    d
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
     parameter PicSize1  = 784;
@@ -36,7 +35,6 @@ module Main(
     );
     
     //  FileInfo Module
-    reg [IntSize-1:0] file [0:1];
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI({file[0],file[1]},file_size,memory_start,memory_end);
 
@@ -64,14 +62,13 @@ module Main(
     parameter [4:0] CAL_ADD          = 5'd16;
     parameter [4:0] CAL_MULTI        = 5'd17;
     
-    reg [5:0]main_tmp_state,next_main_tmp_state;
-    reg [5:0]upload_tmp_state,next_upload_tmp_state;
-    reg [7:0]bufferpos,next_bufferpos;
-    reg readwrite,next_readwrite; // read = 0
     parameter READ = 0;
     parameter WRITE = 1;
+
+    reg [5:0] upload_tmp_state  ,   n_upload_tmp_state;
+    reg [7:0] bufferpos         ,   n_bufferpos       ;
    
-    reg [11:0] FileIndex    ,   n_FileIndex    ;
+    reg [15:0] FileIndex    ,   n_FileIndex    ;
     reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
     reg [4:0] Temp_state    ,   n_Temp_state   ;
     reg [20:0] Tcnter       ,   n_Tcnter       ;
@@ -130,9 +127,7 @@ always @(posedge clk or posedge reset ) begin
     // TODO 把這裡的變數弄好
     else begin
         state       =   n_state;
-        file        =   n_file ;
         state       =   n_state;
-        sub_file    =   n_sub_file;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
     end
@@ -140,73 +135,72 @@ end
 
 
 always @* begin
-    n_file      = file      ;
     n_state     = state     ;
-    n_sub_file  = sub_file  ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
+    
+    // IO varibles default values
+    tx_en = 0;
+    txdata = 0;
+    n_upload_tmp_state = upload_tmp_state;
+    n_bufferpos = bufferpos;
+
     case(state)
         IDLE:begin
             n_Tcnter = 0;
         end
+        
         IO:begin
-            tx_en = 0;
             n_state = SEND_HEAD;
         end
         SEND_HEAD:begin
-            tx_en = 0;
             if(!tx_busy)begin
                 tx_data = (readwrite == READ) ? 8'd82 : 8'd87; // R : W
-                tx_en = 1;
                 n_state = WAIT_FOR_UPLOAD;
-                next_upload_tmp_state = SEND_FILE_INDEX;
-                next_bufferpos = 0;
+                n_upload_tmp_state = SEND_FILE_INDEX;
+                n_bufferpos = 0;
             end
         end
         SEND_FILE_INDEX:begin
-            tx_en = 0;
             if(!tx_busy && bufferpos < 2)begin
-                tx_data = file[bufferpos];
-                    next_bufferpos = bufferpos + 1;
+                    tx_data = file[bufferpos<<3+7:bufferpos<<3];
+                    n_bufferpos = bufferpos + 1;
                     n_state = WAIT_FOR_UPLOAD;
-                    next_upload_tmp_state = SEND_FILE_INDEX;
+                    n_upload_tmp_state = SEND_FILE_INDEX;
                 end else if(bufferpos >= 2)begin
-                    next_state = (readwrite == READ) ? READ_GET_BYTE : WRITE_SEND_BYTE;    
-                    next_bufferpos = memory_start;
+                    n_state = (readwrite == READ) ? READ_GET_BYTE : WRITE_SEND_BYTE;    
+                    n_bufferpos = memory_start;
                 end
             end
         end
         READ_GET_BYTE:begin
-            tx_en = 0;
             if(rx_rdy && bufferpos <= memory_end)begin
-                next_memory[bufferpos] = rx_data;
-                next_bufferpos = bufferpos + 1;
+                n_memory[bufferpos] = rx_data;
+                n_bufferpos = bufferpos + 1;
             end else if (bufferpos > memory_end) begin
-                next_state = IO_FIN;
+                n_state = IO_FIN;
             end
         end
         WRITE_SEND_BYTE:begin
-            tx_en = 0;
             if(!tx_busy && bufferpos <= memory_end)begin
                 tx_data = memory[bufferpos];
-                next_bufferpos = bufferpos + 1;
-                next_state = WAIT_FOR_UPLOAD;
-                next_upload_tmp_state = WRITE_SEND_BYTE;
+                n_bufferpos = bufferpos + 1;
+                n_state = WAIT_FOR_UPLOAD;
+                n_upload_tmp_state = WRITE_SEND_BYTE;
             end else if(bufferpos > memory_end)begin
-                next_state = IO_FIN;    
+                n_state = IO_FIN;    
             end
         end
-
         WAIT_FOR_UPLOAD:begin
             tx_en = 1;
             if(!tx_busy)begin
-                next_state = upload_tmp_state;
+                n_state = upload_tmp_state;
             end
         end
-
         IO_FIN:begin
-            next_state = main_tmp_state;
+            next_state = Temp_state;
         end
+
         CAL_CONV:begin
             //28*28 CONV
             if(stage == 1) begin
