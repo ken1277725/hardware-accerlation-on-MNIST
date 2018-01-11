@@ -322,10 +322,13 @@ always @* begin
                 n_state = STAGE3_CHECK_END ;
             end
         end
+
         STAGE1:begin
-            n_stage = 1 ;
+            n_stage     = 1 ;
+            n_cal_cnt   = 0 ;
             if(Tcnter==0)begin
                 //load unprocessed picture 
+
                 n_Tcnter    = Tcnter + 1    ;
                 n_FileIndex = 0             ;
                 n_ReadWrite = 2'b10         ;
@@ -334,40 +337,49 @@ always @* begin
             end
             else if(0<Tcnter && Tcnter <=32)begin
                 //load Cores
-                //n_Tcnter    = Tcnter + 1    ;
-                n_FileIndex = 32+Tcnter     ; // 33~64 
+                
+                //n_Tcnter
+                n_FileIndex = Tcnter        ; // 1 ~ 32
                 n_ReadWrite = 2'b10         ;
                 n_Temp_state= CAL_CONV      ;
                 n_state     = IO            ;
-                n_cal_cnt   =   0           ;
             end
             else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==1)begin
                 //load bias 
+                
                 n_Tcnter     = Tcnter +1     ;
-                n_FileIndex  = 17+Tcnter[20:1];
+                n_FileIndex  = 17+Tcnter[20:1]; // 33 ~ 64  => (T/2) + 17
                 n_ReadWrite  = 2'b10         ;
                 n_Temp_state = STAGE1        ;
                 n_state      = IO            ; 
             end
             //load Picture After Conv 1 
             else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==0)begin    
-                n_FileIndex  = 49+Tcnter[20:1]     ;
+                //load Picture After Conv1 and calculate bias 
+                
+                //n_Tcnter
+                n_FileIndex  = 49+Tcnter[20:1]; // 65 ~ 96 => (T/2)+49
                 n_ReadWrite  = 2'b10         ;
                 n_Temp_state = CAL_ADD       ; 
                 n_state      = IO            ; 
             end
             //MAXPOOL
             else if(96<Tcnter && Tcnter <= 128)begin
-                n_FileIndex  = Tcnter - 32   ;
+                //load Picture After Conv1 and calcluate maxpool
+                
+                //n_Tcnter
+                n_FileIndex  = Tcnter - 32   ;  //65~96 
                 n_ReadWrite  = 2'b10         ;
                 n_Temp_state = CAL_MAXPOOL   ;
-                n_state      = IO            ; 
+                n_state      = IO            ;
             end
         end
+
         STAGE1_CHECK_END:begin
             //CONV SAVE
             if(0<Tcnter && Tcnter <=32)begin
-                //load Cores
+                //save PictureAfterConv1
+
                 n_Tcnter    = Tcnter + 1    ;
                 n_FileIndex = 64+Tcnter     ; // save at 65~96 
                 n_ReadWrite = 2'b01         ;
@@ -376,15 +388,19 @@ always @* begin
             end
             //BIAS SAVE
             else if(32<Tcnter && Tcnter <= 96)begin
+                //save PictureAfterConv1
+
                 n_Tcnter    = Tcnter + 1    ;
-                n_FileIndex  = 49+Tcnter[20:1]     ;
+                n_FileIndex  = 49+Tcnter[20:1]; // save at 65 ~ 96 
                 n_ReadWrite  = 2'b01         ;
                 n_Temp_state = STAGE1        ;
                 n_state      = IO            ; 
             end
             //MAXPOOL SAVE 
             else if(96<Tcnter && Tcnter < 128)begin
-                n_Tcnter    = Tcnter + 1     ;
+                //save PictureAfterMaxpool1
+
+                n_Tcnter    = Tcnter + 1     ; // save at 97 ~ 127 
                 n_FileIndex  = Tcnter        ;
                 n_ReadWrite  = 2'b01         ;
                 n_Temp_state = STAGE1        ;
@@ -392,58 +408,74 @@ always @* begin
             end
             //MAXPOOL SAVE & END
             else if(Tcnter == 128)begin
-                n_Tcnter    = 0    ;
-                n_FileIndex  = Tcnter        ;
+                //save PictureAfterMaxpool1 and goto STAGE2
+
+                n_Tcnter    = 0    ;           //finish
+                n_FileIndex  = Tcnter        ; // save at 128
                 n_ReadWrite  = 2'b01         ;
                 n_Temp_state = STAGE2        ;
                 n_state      = IO            ;    
             end
         end
+
         STAGE2:begin
             n_stage = 2 ;
-            if(Tcnter[0]==0)begin
+            n_cal_cnt   = 0         ;
+            if(Tcnter[0]==0)begin               //unused for Tcnter 0 
                 n_Tcnter    = Tcnter + 1    ;
                 n_state     = STAGE2        ;
             end
+
             else if(0<Tcnter&&Tcnter<=4096)begin
-                //loadPicAfterStage 
+                
                 if(Tcnter[0]==1)begin
+                    //load PicAfterStage 
+
                     n_Tcnter = Tcnter +1    ;
-                    n_FileIndex = Tcnter[6:1]+129;
+                    n_FileIndex = Tcnter[5:1]+129;  //load 129~160 (T%64/2)+129
                     n_state  = IO           ;
                     n_Temp_state = STAGE2   ;
                     n_ReadWrite  = 2'b10    ;
                 end
-                //loadCore2
                 else begin
-                    n_FileIndex = Tcnter[20:1]+160;
+                     //load Core2
+                     
+                    //n_Tcnter
+                    n_FileIndex = Tcnter[20:1]+160; //load 161~2208 T/2+160  Warning !!
                     n_state  = IO           ;
                     n_Temp_state = CAL_CONV ;
                     n_ReadWrite  = 2'b10    ;
                 end
             end
+
             else if(4096<Tcnter && Tcnter <=4224) begin
             //load conv2_bias 
                 if(Tcnter[0] == 1)begin
+
+                    
                     n_FileIndex = Tcnter[20:1]+161; // T / 2  -2048 + 2209
                     n_state     = IO        ;
                     n_ReadWrite = 2'b10     ;
                     n_Temp_state= STAGE2    ;
                 end
                 else begin
+
                     n_FileIndex = Tcnter[20:1]+225; // T / 2 = 2049 ->2274 
                     n_state     =  IO        ;
                     n_ReadWrite = 2'b10      ;
                     n_Temp_state= CAL_ADD    ;
                 end
             end
+
             //MAXPOOL
             else if(4224<Tcnter && Tcnter <=4288) begin
                 n_FileIndex = Tcnter  - 1951 ;
                 n_state     = IO             ;
                 n_ReadWrite = 2'b10          ;
                 n_Temp_state= CAL_MAXPOOL    ;
+                n_cal_cnt   = 0             ;
             end
+
 
         STAGE2_CHECK_END:begin
             //SAVE Wegiht 
@@ -482,6 +514,7 @@ always @* begin
                 n_Temp_state= STAGE3        ;
             end
         end
+
         STAGE3:begin
             n_stage = 3 ;
             if(Tcnter <80) begin
@@ -498,16 +531,19 @@ always @* begin
                     n_FileIndex = Tcnter[20:1] +2406;
                     n_state     = IO                ;
                     n_ReadWrite = 2'b10             ;
-                    n_Temp_state= CAL_MULTI         ; 
+                    n_Temp_state= CAL_MULTI         ;
+                    n_cal_cnt   = 0         ; 
                 end
             end
             else if(Tcnter ==80) begin
                 n_FileIndex = 2446              ;
                 n_state     = IO                ;
                 n_ReadWrite = 2'b10             ;
-                n_Temp_state= CAL_ADD            ; 
+                n_Temp_state= CAL_ADD           ; 
+                n_cal_cnt   = 0                 ;
             end
         end
+
         STAGE3_CHECK_END:begin
             if(Tcnter < 80) begin
                 n_Tcnter = Tcnter +1            ;
@@ -530,6 +566,7 @@ always @* begin
                 n_state = FIN;
             end
         end
+
         FIN:begin
             number_valid = 1;
         end
