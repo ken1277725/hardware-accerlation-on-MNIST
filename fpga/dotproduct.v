@@ -1,8 +1,8 @@
-module dotProduct ( in1,in2 ,clk,en,out);
+module dotProduct ( in1,in2,out);
     parameter ArraySize = 25;
     parameter   IntSize =  8;
-    input [ArraySize * IntSize : 0] in1;
-    input [ArraySize * IntSize : 0] in2;
+    input [ArraySize * IntSize-1 : 0] in1;
+    input [ArraySize * IntSize-1 : 0] in2;
     output [IntSize:0]              out;
 	assign out =
 		in1[7:0]	 * in2[7:0]	+

@@ -1,12 +1,17 @@
 module conv28x28(data , dPstate , core ,out);
+    parameter ArraySize = 25;
+    parameter   IntSize =  8;
     input data;
     input dPstate;
     input core ;
     output out;
-
-
-
-dotProduct dot1(dPin , core , 0 , 0 , d); 
+    wire [784*IntSize-1:0] data;
+    wire [20:0] dPstate;
+    wire [ArraySize*IntSize-1:0] core;
+    wire [7:0] out;
+    reg  [ArraySize*IntSize-1:0]  dPIn;
+    
+dotProduct dot1(.in1(dPIn) , .in2(core) , .out(out)); 
 
 always @* begin
     case(dPState)
