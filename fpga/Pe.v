@@ -56,12 +56,13 @@ endmodule
 
 
 module PE1(clk , data ,fin , reset); 
-    //parameter bandWidth = 128;    d
+    //
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
     parameter PicSize1  = 784;
     parameter PicSize2  = 196;
     parameter PicSize3  =  49;
+
     input clk;
     input reset; 
     output fin;
@@ -69,6 +70,7 @@ module PE1(clk , data ,fin , reset);
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
     reg [20:0] cal_cnt , n_cal_cnt ;
+
     parameter [4:0] IDLE              = 5'd0;
     parameter [4:0] STAGE1            = 5'd1;
     parameter [4:0] IO                = 5'd2;
@@ -77,7 +79,6 @@ module PE1(clk , data ,fin , reset);
     parameter [4:0] READ_GET_BYTE     = 5'd5;
     parameter [4:0] WRITE_SEND_BYTE   = 5'd6;
     parameter [4:0] WAIT_FOR_UPLOAD   = 5'd7;
-    parameter IO_FIN;
     parameter [4:0] CAL_CONV          = 5'd8;
     parameter [4:0] CAL_MAXPOOL       = 5'd9;
     parameter [4:0] STAGE1_CHECK_END = 5'd10;
@@ -88,14 +89,19 @@ module PE1(clk , data ,fin , reset);
     parameter [4:0] FIN              = 5'd15;
     parameter [4:0] CAL_ADD          = 5'd16;
     parameter [4:0] CAL_MULTI        = 5'd17;
+    parameter [4:0] IO_FIN           = 5'd18;
+
     reg [11:0] FileIndex    ,   n_FileIndex    ;
     reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
     reg [4:0] Temp_state    ,   n_Temp_state   ;
     reg [20:0] Tcnter       ,   n_Tcnter       ;
+
     //TOD ram memory 
+
     reg [IntSize-1:0] memory [0:2500];
     reg [IntSize-1:0] n_memory [0:2500];
     reg [2501 * IntSize-1 :0 ] ram   ;
+
     // ram = {memory[0],memory[1]};
     // Set memory for var
     // give the right var  //ref : http://goo.gl/5NgdCK
@@ -147,7 +153,6 @@ always @(posedge clk or posedge reset ) begin
         state       =   n_state;
         file        =   n_file ;
         state       =   n_state;
-        sub_file    =   n_sub_file;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
     end
@@ -155,7 +160,6 @@ end
 always @* begin
     n_file      = file      ;
     n_state     = state     ;
-    n_sub_file  = sub_file  ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
     case(state)
