@@ -40,8 +40,6 @@ module Main(
     );
     
     //  FileInfo Module
-    wire [15:0] file_size,memory_start,memory_end;
-    file_info FI(file,file_size,memory_start,memory_end);
 
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
@@ -86,6 +84,10 @@ module Main(
     reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
     parameter READ = 2'b10;
     parameter WRITE = 2'b01;
+
+
+    wire [15:0] file_size,memory_start,memory_end;
+    file_info FI(FileIndex,file_size,memory_start,memory_end);
 
     //TOD ram memory 
 
@@ -135,8 +137,6 @@ module Main(
     
     //  FileInfo Module
     //reg [15:0] file,n_file;
-    wire [15:0] file_size,memory_start,memory_end;
-    file_info FI(FileIndex,memory_start,memory_end);
     //conv module 
     //data , dPstate , core ,out
 
@@ -157,7 +157,7 @@ always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-    // TODO 把這裡的變數弄好
+    // TODO ??��?�裡??��?�數弄好
     else begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
@@ -332,7 +332,9 @@ always @* begin
         CAL_MULTI:begin
             if(cal_cnt<784)begin
                 n_cal_cnt = cal_cnt ; 
-                n_memory[(Tcnter[(20:3)<<3 +: 8]+1578 )<<3 +: 8] = memory[(Tcnter[(20:3)<<3 +: 8]+1578 )<<3 +: 8] + memory[(cal_cnt)<<3 +: 8] * memory[(cal_cnt + 784 )<<3 +: 8];
+                n_memory[(Tcnter[20:3]+1578 )<<3 +: 8] 
+                = memory[(Tcnter[20:3]+1578 )<<3 +: 8]
+                 + memory[(cal_cnt)<<3 +: 8] * memory[(cal_cnt + 784 )<<3 +: 8];
             end
             else begin
                 n_state = STAGE3_CHECK_END ;
