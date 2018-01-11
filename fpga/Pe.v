@@ -96,37 +96,49 @@ module Main(
     // give the right var  //ref : http://goo.gl/5NgdCK
     //TODO: assign those val !!!!
     //Stage 1 
-    reg [IntSize*PicSize1-1:0] unprocessedPicture      ; 
-    unprocessedPicture = memory[0:783];
-    reg [IntSize*25-1 :0] Core1                   ;
-    Core1 = memory[784:808];
-    reg [IntSize*PicSize1-1:0] Conv1Bias               ;
-    Conv1Bias = memory[809:1592];
-    reg [IntSize*PicSize1-1:0] PictureAfterConv1       ;
-    n_memory[1593:2376] = PictureAfterConv1;
-    reg [IntSize*196-1:0] PictureAfterMaxpool1    ;
-    n_memory[2377:2572] = PictureAfterMaxpool1;
-    //Stage 2 
-    reg [IntSize*196-1:0] PictureAfterStage1      ;
-    reg [IntSize*25-1 :0] Core2                   ;
-    reg [IntSize*196-1:0] Conv2Bias               ;
-    reg [IntSize*196-1:0] PictureAfterConv2Old    ;
-    reg [IntSize*196-1:0] PictureAfterConv2New    ;
-    reg [IntSize*49-1 :0] PictureAfterMaxpool2    ;
+    wire [IntSize*PicSize1-1:0] unprocessedPicture      ; 
+    wire [IntSize*25-1 :0] Core1                        ;
+    wire [IntSize*PicSize1-1:0] Conv1Bias               ;
+    wire [IntSize*PicSize1-1:0] PictureAfterConv1        ;
+    wire [IntSize*196-1:0] PictureAfterMaxpool1          ;
     
-    //Stage 3
-    reg [IntSize*PicSize1-1:0] MatrixInput        ;
-    reg [IntSize*PicSize1-1:0] Matrix             ;
-    reg [IntSize*10-1:0      ] MartrixBias        ;
-    reg [IntSize*10-1:0      ] Answer             ;    
+    assign unprocessedPicture = memory[0:6271];            // Read only
+    assign Core1 = memory[6272:6471];                      // Read only
+    assign Conv1Bias = memory[6472:12743];                 // Read only
+    assign PictureAfterConv1 = memory[12744:19015];         // Write / Read 
+    assign PictureAfterMaxpool1 = memory[19016:20583];      // Write only
+    //Stage 2 
+    wire [IntSize*196-1:0] PictureAfterStage1           ;
+    wire [IntSize*25-1 :0] Core2                        ;
+    wire [IntSize*196-1:0] Conv2Bias                    ;
+    wire [IntSize*196-1:0] PictureAfterConv2Old          ;
+    wire [IntSize*196-1:0] PictureAfterConv2New          ;
+    wire [IntSize*49-1 :0] PictureAfterMaxpool2          ;
 
- 
+    assign PictureAfterStage1  = memory[0:1567]        ;   // Read only
+    assign Core2               = memory[1568:1767]     ;   // Read only 
+    assign Conv2Bias           = memory[1768:3335]     ;   // Read only
+    //PictureAfterConv2Old;                                 empty
+    assign PictureAfterConv2New = memory[4904:6471]  ;   // Write / Read 
+    assign PictureAfterMaxpool2 = memory[6472:6863]  ;   // Write only 
+   
+    //Stage 3
+    wire [IntSize*PicSize1-1:0] MatrixInput             ;
+    wire [IntSize*PicSize1-1:0] Matrix                  ;
+    wire [IntSize*10-1:0      ] MartrixBias             ;
+    wire [IntSize*10-1:0      ] Answer                   ;      
+
+    assign MatrixInput         = memory[0:6271]        ;   // Read only 
+    assign Matrix              = memory[6272:12543]    ;   // Read only
+    assign MartrixBias         = memory[12544:12623]   ;   // Read only 
+    assign Answer              = memory[12624:12703]   ;   // None
+    
     //  FileInfo Module
     //reg [15:0] file,n_file;
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI(FileIndex,memory_start,memory_end);
-//conv module 
-//data , dPstate , core ,out
+    //conv module 
+    //data , dPstate , core ,out
 
     wire [IntSize-1:0] out_c28;
     wire [IntSize-1:0] out_c14;
@@ -155,6 +167,7 @@ always @(posedge clk or posedge reset ) begin
         bufferpos   =   n_bufferpos;
         max         =   n_max;
         ans         =   n_ans;
+        memory      =   n_memory;
         //file        =   n_file;
     end
 end
@@ -170,7 +183,7 @@ always @* begin
     n_state     = state     ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
-
+    n_memory    = memory    ;
     
     // IO varibles default values
     tx_en = 0;
