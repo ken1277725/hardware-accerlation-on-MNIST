@@ -5,6 +5,9 @@ module Main(
     
     input rx,
     output tx
+
+    output [4:0] state_led,
+    output [4:0] ANSWER
 ); 
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
@@ -50,6 +53,8 @@ module Main(
     reg [4:0] state , n_state ;
     reg [20:0] cal_cnt , n_cal_cnt ;
 
+    assign state_led = state;
+    
     //parameter for state : 
     parameter [4:0] IDLE              = 5'd0;
     parameter [4:0] STAGE1            = 5'd1;
@@ -166,7 +171,10 @@ always @* begin
     case(state)
         IDLE:begin
             n_Tcnter = 0;
-            if(rx_rdy)
+            n_state = IO;
+            n_FileIndex = 0;
+            n_ReadWrite = READ;
+            n_Temp_state = CAL_CONV; 
         end
         
         IO:begin
