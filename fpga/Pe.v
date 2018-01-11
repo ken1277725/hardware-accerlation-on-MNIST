@@ -481,6 +481,7 @@ always @* begin
             //SAVE Wegiht 
             if(0<Tcnter && Tcnter <= 4096)begin
                 n_Tcnter = Tcnter +1        ;
+                
                 if(Tcnter[6:0]==0)begin             //Tcnter % 64 =0
                     //savePicAfterconv2 new  
 
@@ -498,7 +499,7 @@ always @* begin
                 //savePicAfterconv2 new
 
                 n_Tcnter = Tcnter +1     ;
-                n_FileIndex = Tcnter[20:1]+225; // T / 2 = 2049 ->2274 
+                n_FileIndex = Tcnter[20:1]+225; //save 2274~ 2337 => T/2+225   T / 2 = 2049 ->2274 
                 n_state     =  IO        ;
                 n_ReadWrite = 2'b01      ;
                 n_Temp_state= STAGE2     ;
@@ -507,7 +508,7 @@ always @* begin
                 //save Picture After Maxpool2
 
                 n_Tcnter = Tcnter +1        ;
-                n_FileIndex = Tcnter  - 1887; // save
+                n_FileIndex = Tcnter  - 1887; // save 2338 ~ 2400 => T-1887
                 n_state     = IO            ;
                 n_ReadWrite = 2'b01         ;
                 n_Temp_state= STAGE2        ;
@@ -515,8 +516,8 @@ always @* begin
             else if(Tcnter == 4288) begin
                 //save Picture After Maxpool2
 
-                n_Tcnter = 0       ;
-                n_FileIndex = Tcnter  - 1887;
+                n_Tcnter = 0       ;          //finished goto STAGE3 
+                n_FileIndex = Tcnter  - 1887; // save 2401  => T-1887
                 n_state     = IO            ;
                 n_ReadWrite = 2'b01         ;
                 n_Temp_state= STAGE3        ;
@@ -525,40 +526,49 @@ always @* begin
 
         STAGE3:begin
             n_stage = 3 ;
+            n_cal_cnt   = 0; 
             if(Tcnter <80) begin
                 if(Tcnter[0] == 0 )begin
                 //load Matrix Input
+
                     n_Tcnter = Tcnter +1            ;
-                    n_FileIndex = Tcnter[2:1] +2402 ;
+                    n_FileIndex = Tcnter[2:1] +2402 ;//load 2402~2405Tcnter%8/2 +2402
                     n_state     = IO                ;
                     n_ReadWrite = 2'b10             ;
                     n_Temp_state= STAGE3            ; 
                 end
                 else if (Tcnter[0]==1) begin
-                //load Matrix 
-                    n_FileIndex = Tcnter[20:1] +2406;
+                    //load Matrix 
+
+                    //n_Tcnter
+                    n_FileIndex = Tcnter[20:1] +2406;// load 2406~2445 => Tcnter/2 + 2406
                     n_state     = IO                ;
                     n_ReadWrite = 2'b10             ;
                     n_Temp_state= CAL_MULTI         ;
-                    n_cal_cnt   = 0         ; 
                 end
             end
             else if(Tcnter ==80) begin
-                n_FileIndex = 2446              ;
+                //load Matrix bias
+
+                //n_Tcnter
+                n_FileIndex = 2446              ; // load 2446
                 n_state     = IO                ;
                 n_ReadWrite = 2'b10             ;
                 n_Temp_state= CAL_ADD           ; 
-                n_cal_cnt   = 0                 ;
             end
         end
 
         STAGE3_CHECK_END:begin
             if(Tcnter < 80) begin
+                //No save , add in Answer 
+                
                 n_Tcnter = Tcnter +1            ;
                 n_state = STAGE3;
 
             end
             else begin
+                //No save , add in Answer 
+
                 n_bufferpos = 1578;
                 n_state = FIND_MAX;
                 n_max = 0;
