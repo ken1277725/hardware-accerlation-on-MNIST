@@ -146,10 +146,12 @@ always @(posedge clk or posedge reset ) begin
     // TODO 把這裡的變數弄好
     else begin
         state       =   n_state;
-        state       =   n_state;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
         cal_cnt     =   n_cal_cnt;
+        file        =   n_file ;
+        upload_tmp_state = n_upload_tmp_state;
+        bufferpos   =   n_bufferpos;
     end
 end
 
@@ -160,10 +162,8 @@ always @* begin
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
     n_cal_cnt   = cal_cnt   ;
-    n_state     = state     ;
-    n_Tcnter    = Tcnter    ;
-    n_stage     = stage     ;
-    
+    //TODO control all varibale s
+
     // IO varibles default values
     tx_en = 0;
     txdata = 0;
@@ -446,31 +446,34 @@ always @* begin
             end
 
             else if(4096<Tcnter && Tcnter <=4224) begin
-            //load conv2_bias 
                 if(Tcnter[0] == 1)begin
-
-                    
-                    n_FileIndex = Tcnter[20:1]+161; // T / 2  -2048 + 2209
+                    //load conv2_bias 
+            
+                    n_Tcnter    = Tcnter +1 ;
+                    n_FileIndex = Tcnter[20:1]+161; //load 2209 ~ 2272  => T/2+161  T / 2  -2048 + 2209
                     n_state     = IO        ;
                     n_ReadWrite = 2'b10     ;
                     n_Temp_state= STAGE2    ;
                 end
                 else begin
+                    //load Picture After conv2_new
 
-                    n_FileIndex = Tcnter[20:1]+225; // T / 2 = 2049 ->2274 
+                    //n_Tcnter 
+                    n_FileIndex = Tcnter[20:1]+225; //load 2274 ~ 2337 => T/2+225 T / 2 = 2049 ->2274 
                     n_state     =  IO        ;
                     n_ReadWrite = 2'b10      ;
                     n_Temp_state= CAL_ADD    ;
                 end
             end
 
-            //MAXPOOL
             else if(4224<Tcnter && Tcnter <=4288) begin
-                n_FileIndex = Tcnter  - 1951 ;
+                //load PictureAfterConv2_new and MAXPOOL
+            
+                //n_Tcnter
+                n_FileIndex = Tcnter  - 1951 ; //load 2274 ~ 2337 => T-1951 : 4225-1951 = 2274  
                 n_state     = IO             ;
                 n_ReadWrite = 2'b10          ;
                 n_Temp_state= CAL_MAXPOOL    ;
-                n_cal_cnt   = 0             ;
             end
 
 
@@ -478,7 +481,9 @@ always @* begin
             //SAVE Wegiht 
             if(0<Tcnter && Tcnter <= 4096)begin
                 n_Tcnter = Tcnter +1        ;
-                if(Tcnter[6:0]==0)begin    //Tcnter % 64 =0
+                if(Tcnter[6:0]==0)begin             //Tcnter % 64 =0
+                    //savePicAfterconv2 new  
+
                     n_FileIndex = Tcnter[20:6]+2273; // 2274~2337
                     n_state  = IO           ;
                     n_Temp_state = STAGE2   ;
@@ -490,6 +495,8 @@ always @* begin
             end
             //SAVE BIAS
             else if(4096<Tcnter && Tcnter <=4224)begin
+                //savePicAfterconv2 new
+
                 n_Tcnter = Tcnter +1     ;
                 n_FileIndex = Tcnter[20:1]+225; // T / 2 = 2049 ->2274 
                 n_state     =  IO        ;
@@ -497,13 +504,17 @@ always @* begin
                 n_Temp_state= STAGE2     ;
             end
             else if(4224<Tcnter && Tcnter <4288) begin
+                //save Picture After Maxpool2
+
                 n_Tcnter = Tcnter +1        ;
-                n_FileIndex = Tcnter  - 1887;
+                n_FileIndex = Tcnter  - 1887; // save
                 n_state     = IO            ;
                 n_ReadWrite = 2'b01         ;
                 n_Temp_state= STAGE2        ;
             end
-            else if(Tcnter ==4288) begin
+            else if(Tcnter == 4288) begin
+                //save Picture After Maxpool2
+
                 n_Tcnter = 0       ;
                 n_FileIndex = Tcnter  - 1887;
                 n_state     = IO            ;
