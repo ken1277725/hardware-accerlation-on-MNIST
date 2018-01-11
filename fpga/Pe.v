@@ -7,7 +7,9 @@ module Main(
     output tx
 
     output [4:0] state_led,
-    output [4:0] ANSWER
+    output [3:0] ANSWER,
+
+    output number_valid 
 ); 
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
