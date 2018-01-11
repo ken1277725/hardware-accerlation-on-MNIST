@@ -98,7 +98,7 @@ module PE1(clk , data ,fin , reset);
     reg [2501 * IntSize-1 :0 ] ram   ;
     // ram = {memory[0],memory[1]};
     // Set memory for var
-    //TODO: give the right var  //ref : http://goo.gl/5NgdCK
+    // give the right var  //ref : http://goo.gl/5NgdCK
     //TODO: assign those val !!!!
     //Stage 1 
     reg [IntSize*PicSize1-1:0] unprocessedPicture      ; 
@@ -125,7 +125,6 @@ module PE1(clk , data ,fin , reset);
 //conv module 
 //data , dPstate , core ,out
 
-    //TODO fix those module 
     wire [IntSize-1:0] out_c28;
     wire [IntSize-1:0] out_c14;
     
@@ -336,7 +335,7 @@ always @* begin
             else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==0)begin    
                 n_FileIndex  = 49+Tcnter[20:1]     ;
                 n_ReadWrite  = 2'b10         ;
-                n_Temp_state = CAL_ADD       ; // TODO: unfinished 
+                n_Temp_state = CAL_ADD       ; 
                 n_state      = IO            ; 
             end
             //MAXPOOL
