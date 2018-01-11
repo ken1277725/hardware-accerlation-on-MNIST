@@ -1,0 +1,16 @@
+Memory start,Memory end,File size,File Content,file Index start,file Index end,quantities of files
+0,783,784,unprocessed picture,0,0,1
+784,808,25,Core1,1,32,32
+809,1592,784,Conv1 bias,33,64,32
+1593,2376,784,Picture After conv1,65,96,32
+2377,2572,196,Picture After Maxpool1,97,128,32
+0,195,196,Picture After Stage1,129,160,32
+196,220,25,Core2,161,2208,2048
+221,416,196,Conv2 bias,2209,2272,64
+417,612,196,Picture After conv2 _ old,2273,2273,1
+613,808,196,Picture After conv2 _ new,2274,2337,64
+809,857,49,Picture After Maxpool2,2338,2401,64
+0,783,784,Matrix Input,2402,2405,4
+784,1567,784,Matrix,2406,2445,40
+1568,1577,10,Matrix bias,2446,2446,1
+1578,1587,10,Answer,2447,2447,1
