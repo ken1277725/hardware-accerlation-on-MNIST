@@ -142,8 +142,6 @@ reg [PicSize2*IntSize : 0] Pic2    ;
 reg [CoreSize*IntSize : 0] dPIn    ;
 
 reg [15:0] n_file   ;
-reg n_mem_to_PE     ;
-reg n_PE_to_mem     ;
 reg n_sub_file      ; 
 wire sub_file       ;
 
@@ -198,14 +196,14 @@ always @* begin
         end
         IO:begin
             tx_en = 0;
-            next_state = SEND_HEAD;
+            n_state = SEND_HEAD;
         end
         SEND_HEAD:begin
             tx_en = 0;
             if(!tx_busy)begin
                 tx_data = (readwrite == READ) ? 8'd82 : 8'd87; // R : W
                 tx_en = 1;
-                next_state = WAIT_FOR_UPLOAD;
+                n_state = WAIT_FOR_UPLOAD;
                 next_upload_tmp_state = SEND_FILE_INDEX;
                 next_bufferpos = 0;
             end
@@ -215,7 +213,7 @@ always @* begin
             if(!tx_busy && bufferpos < 2)begin
                 tx_data = file[bufferpos];
                     next_bufferpos = bufferpos + 1;
-                    next_state = WAIT_FOR_UPLOAD;
+                    n_state = WAIT_FOR_UPLOAD;
                     next_upload_tmp_state = SEND_FILE_INDEX;
                 end else if(bufferpos >= 2)begin
                     next_state = (readwrite == READ) ? READ_GET_BYTE : WRITE_SEND_BYTE;    
