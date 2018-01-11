@@ -113,15 +113,12 @@ endmodule
 
 
 module PE1(clk , data , en ,fin , reset); 
-    parameter bandWidth = 128;
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
     parameter PicSize1  = 784;
     parameter PicSize2  = 196;
     parameter PicSize3  =  49;
     input clk;
-    input [bandWidth * IntSize: 0] idata;
-    output[bandWidth * IntSize: 0] odata;
     input en;
     input reset; 
     output fin;
@@ -144,7 +141,6 @@ reg [CoreSize*IntSize : 0] dPIn    ;
 reg [15:0] n_file   ;
 reg n_sub_file      ; 
 wire sub_file       ;
-
 reg [4:0] state , n_state ;
 parameter [4:0] IDLE              = 5'd0;
 parameter [4:0] STAGE1            = 5'd1;
@@ -166,7 +162,6 @@ parameter [4:0] FIN              = 5'd15;
 reg [11:0] FileIndex    ,   n_FileIndex    ;
 reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
 reg [4:0] Temp_state    ,   n_Temp_state   ;
-reg [10:0] Tcnter       ,   n_Tcnter       ;
 
 always @(posedge clk or posedge reset ) begin
     if(reset)begin
@@ -253,10 +248,8 @@ always @* begin
             next_state = main_tmp_state;
         end
         CAL_CONV:begin
-
         end
         CAL_MAXPOOL:begin
-
         end
         STAGE1:begin
             if(Tcnter==0)begin
@@ -266,9 +259,7 @@ always @* begin
                 n_Temp_state= STAGE1        ;
                 n_state     = IO            ;
             end
-            if(0<Tcnter && Tcnter <=32)begin
                 //load Cores
-                n_Tcnter    = Tcnter + 1    ;
                 n_FileIndex = 32+Tcnter     ; // 33~64 
                 n_ReadWrite = 2'b10         ;
                 n_Temp_state= CAL_CONV      ;
@@ -276,16 +267,6 @@ always @* begin
             end
         end
         STAGE1_CHECK_END:begin
-            if(Tcnter == 32)begin
-                n_Tcnter = 0;
-                n_FileIndex = Tcnter             ;
-                n_ReadWrite = 2'b01         ;
-                n_Temp_state= STAGE2        ;
-                n_state     = IO            ;
-            end
-            else begin
-                //Save maxpool file 
-                n_FileIndex = Tcnter             ;
                 n_ReadWrite = 2'b01         ;
                 n_Temp_state= STAGE1        ;
                 n_state     = IO            ;
@@ -294,17 +275,7 @@ always @* begin
         STAGE2:begin
             if(Tcnter[0]==0)begin
                 n_Tcnter    = Tcnter + 1    ;
-                n_FileIndex = (Tcnter/2)%32+1    ;
-                n_ReadWrite = 2'b10         ;
-                n_Temp_state= STAGE2        ;
-                n_state     = IO            ;
             end
-            if(Tcnter[0]==1)begin
-                n_Tcnter    = Tcnter + 1    ;
-                n_FileIndex = (Tcnter/2)+129;
-                n_ReadWrite = 2'b10         ;
-                n_Temp_state= CAL_CONV      ;
-                n_state     = IO            ;
             end
         STAGE2_CHECK_END:begin
             n_Temp_state= STAGE2;
