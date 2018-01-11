@@ -56,21 +56,26 @@ endmodule
 
 
 module PE1(clk , data ,fin , reset); 
+    
     //
+    
+    input clk;
+    input reset; 
+    output fin;
+
+    //    
     parameter IntSize   =   8;
     parameter CoreSize  =  25;
     parameter PicSize1  = 784;
     parameter PicSize2  = 196;
     parameter PicSize3  =  49;
 
-    input clk;
-    input reset; 
-    output fin;
-
+    
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
     reg [20:0] cal_cnt , n_cal_cnt ;
 
+    //parameter for state : 
     parameter [4:0] IDLE              = 5'd0;
     parameter [4:0] STAGE1            = 5'd1;
     parameter [4:0] IO                = 5'd2;
@@ -155,6 +160,7 @@ always @(posedge clk or posedge reset ) begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
+        cal_cnt     =   n_cal_cnt;
     end
 end
 always @* begin
@@ -162,6 +168,7 @@ always @* begin
     n_state     = state     ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
+    n_cal_cnt   = cal_cnt   ;
     case(state)
         IDLE:begin
             n_Tcnter = 0;
@@ -313,6 +320,7 @@ always @* begin
         STAGE1:begin
             n_stage = 1 ;
             if(Tcnter==0)begin
+                //load unprocessed picture 
                 n_Tcnter    = Tcnter + 1    ;
                 n_FileIndex = 0             ;
                 n_ReadWrite = 2'b10         ;
@@ -326,6 +334,7 @@ always @* begin
                 n_ReadWrite = 2'b10         ;
                 n_Temp_state= CAL_CONV      ;
                 n_state     = IO            ;
+                n_cal_cnt   =   0           ;
             end
             else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==1)begin
                 //load bias 
