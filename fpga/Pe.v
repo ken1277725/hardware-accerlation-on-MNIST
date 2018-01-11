@@ -13,11 +13,12 @@ module Main(
     parameter PicSize2  = 196;
     parameter PicSize3  =  49;
 
+    //  RS232 Module    
     wire [7:0] rx_data;
     wire tx_busy,rx_rdy;
     reg [7:0] tx_data;
     reg tx_en;
-    
+    reg clk_9600;
     rs232 RS232(
         .clk(clk),
         .rst(rst),
@@ -29,9 +30,12 @@ module Main(
         .tx_busy(tx_busy),
         
         .rxdata(rx_data),
-        .rxdata_rdy(rx_rdy)
-    );
+        .rxdata_rdy(rx_rdy),
 
+        .clk_9600(clk_9600)
+    );
+    
+    //  FileInfo Module
     reg [IntSize-1:0] file [0:1];
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI({file[0],file[1]},file_size,memory_start,memory_end);
@@ -123,21 +127,19 @@ always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-
+    // TODO 把這裡的變數弄好
     else begin
         state       =   n_state;
         file        =   n_file ;
         state       =   n_state;
         sub_file    =   n_sub_file;
-        mem_to_PE   =   n_mem_to_PE;
-        PE_to_mem   =   n_PE_to_mem;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
     end
 end
+
+
 always @* begin
-    n_mem_to_PE = mem_to_PE ;
-    n_PE_to_mem = PE_to_mem ;
     n_file      = file      ;
     n_state     = state     ;
     n_sub_file  = sub_file  ;
