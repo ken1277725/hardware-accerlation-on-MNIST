@@ -43,7 +43,13 @@ dotProduct dot1(.in1(dPIn) , .in2(core) , .out(out));
     assign DATA[24] = (inI+2<0 || inJ+2<0 || inI+2>27 || inJ+2>27) ? 0 : data[(inI+2)*28 + inJ+2 ];
 always @* begin
     
-    dPIn = DATA[0:24];
+    dPIn = {
+DATA[0] ,DATA[1] ,DATA[2] ,DATA[3] ,DATA[4] ,
+DATA[5] ,DATA[6] ,DATA[7] ,DATA[8] ,DATA[9] ,
+DATA[10],DATA[11],DATA[12],DATA[13],DATA[14],
+DATA[15],DATA[16],DATA[17],DATA[18],DATA[19],
+DATA[20],DATA[21],DATA[22],DATA[23],DATA[24]
+};
 end
 endmodule
 
