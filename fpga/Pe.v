@@ -1,4 +1,3 @@
-
 module Main(
     input clk,
     input reset,
@@ -157,7 +156,7 @@ always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-    // TODO ??Šé?™è£¡??„è?Šæ•¸å¼„å¥½
+    // TODO ??ï¿½ï¿½?ï¿½è£¡??ï¿½ï¿½?ï¿½æ•¸å¼„å¥½
     else begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
@@ -505,3 +504,113 @@ always @* begin
             //SAVE Wegiht 
             if(0<Tcnter && Tcnter <= 4096)begin
                 n_Tcnter = Tcnter +1        ;
+                
+                if(Tcnter[6:0]==0)begin             //Tcnter % 64 =0
+                    //savePicAfterconv2 new  
+
+                    n_FileIndex = Tcnter[20:6]+2273; // 2274~2337
+                    n_state  = IO           ;
+                    n_Temp_state = STAGE2   ;
+                    n_ReadWrite  = 2'b01    ;
+                end 
+                else begin
+                    n_state = STAGE2        ;
+                end
+            end
+            //SAVE BIAS
+            else if(4096<Tcnter && Tcnter <=4224)begin
+                //savePicAfterconv2 new
+
+                n_Tcnter = Tcnter +1     ;
+                n_FileIndex = Tcnter[20:1]+225; //save 2274~ 2337 => T/2+225   T / 2 = 2049 ->2274 
+                n_state     =  IO        ;
+                n_ReadWrite = 2'b01      ;
+                n_Temp_state= STAGE2     ;
+            end
+            else if(4224<Tcnter && Tcnter <4288) begin
+                //save Picture After Maxpool2
+
+                n_Tcnter = Tcnter +1        ;
+                n_FileIndex = Tcnter  - 1887; // save 2338 ~ 2400 => T-1887
+                n_state     = IO            ;
+                n_ReadWrite = 2'b01         ;
+                n_Temp_state= STAGE2        ;
+            end
+            else if(Tcnter == 4288) begin
+                //save Picture After Maxpool2
+
+                n_Tcnter = 0       ;          //finished goto STAGE3 
+                n_FileIndex = Tcnter  - 1887; // save 2401  => T-1887
+                n_state     = IO            ;
+                n_ReadWrite = 2'b01         ;
+                n_Temp_state= STAGE3        ;
+            end
+        end
+
+        STAGE3:begin
+            n_stage = 3 ;
+            n_cal_cnt   = 0; 
+            if(Tcnter <80) begin
+                if(Tcnter[0] == 0 )begin
+                //load Matrix Input
+
+                    n_Tcnter = Tcnter +1            ;
+                    n_FileIndex = Tcnter[2:1] +2402 ;//load 2402~2405Tcnter%8/2 +2402
+                    n_state     = IO                ;
+                    n_ReadWrite = 2'b10             ;
+                    n_Temp_state= STAGE3            ; 
+                end
+                else if (Tcnter[0]==1) begin
+                    //load Matrix 
+
+                    //n_Tcnter
+                    n_FileIndex = Tcnter[20:1] +2406;// load 2406~2445 => Tcnter/2 + 2406
+                    n_state     = IO                ;
+                    n_ReadWrite = 2'b10             ;
+                    n_Temp_state= CAL_MULTI         ;
+                end
+            end
+            else if(Tcnter ==80) begin
+                //load Matrix bias
+
+                //n_Tcnter
+                n_FileIndex = 2446              ; // load 2446
+                n_state     = IO                ;
+                n_ReadWrite = 2'b10             ;
+                n_Temp_state= CAL_ADD           ; 
+            end
+        end
+
+        STAGE3_CHECK_END:begin
+            if(Tcnter < 80) begin
+                //No save , add in Answer 
+                
+                n_Tcnter = Tcnter +1            ;
+                n_state = STAGE3;
+
+            end
+            else begin
+                //No save , add in Answer 
+
+                n_bufferpos = 1578;
+                n_state = FIND_MAX;
+                n_max = 0;
+            end
+        end
+        FIND_MAX:begin
+            if(memory[bufferpos] > max)begin
+                n_max = memory[bufferpos];
+                n_ans = bufferpos - 1578;
+            end
+            n_bufferpos = bufferpos + 1;
+            if(bufferpos == 1587)begin
+                n_state = FIN;
+            end
+        end
+
+        FIN:begin
+            number_valid = 1;
+        end
+    endcase
+end
+endmodule 
