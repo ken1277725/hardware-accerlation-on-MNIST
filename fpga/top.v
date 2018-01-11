@@ -17,6 +17,7 @@ wire clk_4;
 clock_divider #(4) CD01(clk_4,clk);
 //wire number_valid;
 wire [3:0] BCD;
+wire number_valid;
 Main main(
     .clk(clk_4),
     .reset(rst),
@@ -29,7 +30,6 @@ Main main(
     .number_valid(number_valid)
 );
 
-wire number_valid;
 wire [15:0] SSDBCD;
 wire clk_13;
 assign SSDBCD = number_valid ? {4'd10,4'd10,4'd10,BCD}:{4'd0,4'd0,4'd0,4'd0};

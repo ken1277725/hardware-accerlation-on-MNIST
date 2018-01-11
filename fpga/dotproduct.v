@@ -3,7 +3,7 @@ module dotProduct ( in1,in2,out);
     parameter   IntSize =  8;
     input [ArraySize * IntSize-1 : 0] in1;
     input [ArraySize * IntSize-1 : 0] in2;
-    output [IntSize:0]              out;
+    output [IntSize-1:0]              out;
 	assign out =
 		in1[7:0]	 * in2[7:0]	+
 		in1[15:8]	 * in2[15:8]	+
@@ -35,6 +35,7 @@ endmodule
 
 
 module maxPool2x2(in1,in2,in3,in4,out1);
+    parameter   IntSize =  8;
 	input 	[IntSize-1  : 0] in1,in2,in3,in4;
 	output	[IntSize-1  : 0] out1;
 	wire [IntSize-1 : 0] a,b;

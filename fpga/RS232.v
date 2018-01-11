@@ -183,7 +183,7 @@ transmitter T1(
      .wr_en(send),
      .clk_50m(clk_9600),
      .rst(rst),
-     .clken(1),
+     .clken(1'b1),
      .tx(tx),
      .tx_busy(tx_busy)
 );
