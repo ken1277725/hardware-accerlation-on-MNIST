@@ -82,9 +82,12 @@ module Main(
     
     parameter READ = 0;
     parameter WRITE = 1;
-
+    
+    reg [IntSize-1:0] n_max , max;
+    reg [3:0] n_ans , ans;
+    assign ANSWER = ans;
     reg [5:0] upload_tmp_state  ,   n_upload_tmp_state;
-    reg [7:0] bufferpos         ,   n_bufferpos       ;
+    reg [15:0] bufferpos         ,   n_bufferpos       ;
    
     reg [15:0] FileIndex    ,   n_FileIndex    ;
     reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
@@ -163,20 +166,20 @@ always @* begin
     n_state     = state     ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
+
     
     // IO varibles default values
     tx_en = 0;
     txdata = 0;
     n_upload_tmp_state = upload_tmp_state;
     n_bufferpos = bufferpos;
+    
+    number_valid = 0;
 
     case(state)
         IDLE:begin
             n_Tcnter = 0;
-            n_state = IO;
-            n_FileIndex = 0;
-            n_ReadWrite = READ;
-            n_Temp_state = CAL_CONV; 
+            n_state = STAGE1; 
         end
         
         IO:begin
@@ -512,12 +515,23 @@ always @* begin
 
             end
             else begin
+                n_bufferpos = 1578;
+                n_state = FIND_MAX;
+                n_max = 0;
+            end
+        end
+        FIND_MAX:begin
+            if(memory[bufferpos] > max)begin
+                n_max = memory[bufferpos];
+                n_ans = bufferpos - 1578;
+            end
+            n_bufferpos = bufferpos + 1;
+            if(bufferpos == 1587)begin
                 n_state = FIN;
             end
         end
         FIN:begin
-            //TODO
-            //show LED 
+            number_valid = 1;
         end
     endcase
 end
