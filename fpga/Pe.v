@@ -88,7 +88,7 @@ module Main(
 
     reg [IntSize-1:0] memory [0:2500];
     reg [IntSize-1:0] n_memory [0:2500];
-    reg [2501 * IntSize-1 :0 ] ram   ;
+    reg [2500 * IntSize-1 :0 ] ram   ;
 
     // ram = {memory[0],memory[1]};
     // Set memory for var
@@ -96,10 +96,12 @@ module Main(
     //TODO: assign those val !!!!
     //Stage 1 
     
-    reg [IntSize*PicSize1-1:0] unprocessedPicture      ; 
+    wire [IntSize*PicSize1-1:0] unprocessedPicture      ; 
+    unprocessedPicture = {memory[],};
     reg [IntSize*25-1 :0] Core1                   ;
     reg [IntSize*PicSize1-1:0] Conv1Bias               ;
     reg [IntSize*PicSize1-1:0] PictureAfterConv1       ;
+    {n_memory[]}=PictureAfterConv1;
     reg [IntSize*196-1:0] PictureAfterMaxpool1    ;
     
     //Stage 2 
@@ -140,7 +142,7 @@ always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-    // TODO ??Šé?™è£¡??„è?Šæ•¸å¼„å¥½
+    // TODO ??ï¿½ï¿½?ï¿½è£¡??ï¿½ï¿½?ï¿½æ•¸å¼„å¥½
     else begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
