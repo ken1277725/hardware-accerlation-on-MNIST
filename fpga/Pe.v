@@ -55,7 +55,6 @@ endmodule
 
 
 
-
 module PE1(clk , data ,fin , reset); 
     //parameter bandWidth = 128;    d
     parameter IntSize   =   8;
@@ -137,9 +136,9 @@ module PE1(clk , data ,fin , reset);
     wire [IntSize-1:0] out_m14;
     wire [IntSize-1:0] out_m7 ;
     
-    maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.n_pic2(PictureAfterMaxpool1));
+    maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.n_pic2(out_m14));
     //TODO: fix this module 
-    maxpool7x7 m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.n_pic2(PictureAfterMaxpool2));
+    maxpool7x7 m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.n_pic2(out_m7));
 
 always @(posedge clk or posedge reset ) begin
     if(reset)begin
@@ -151,15 +150,11 @@ always @(posedge clk or posedge reset ) begin
         file        =   n_file ;
         state       =   n_state;
         sub_file    =   n_sub_file;
-        mem_to_PE   =   n_mem_to_PE;
-        PE_to_mem   =   n_PE_to_mem;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
     end
 end
 always @* begin
-    n_mem_to_PE = mem_to_PE ;
-    n_PE_to_mem = PE_to_mem ;
     n_file      = file      ;
     n_state     = state     ;
     n_sub_file  = sub_file  ;
@@ -173,6 +168,7 @@ always @* begin
             tx_en = 0;
             n_state = SEND_HEAD;
         end
+        
         SEND_HEAD:begin
             tx_en = 0;
             if(!tx_busy)begin
@@ -183,6 +179,7 @@ always @* begin
                 next_bufferpos = 0;
             end
         end
+
         SEND_FILE_INDEX:begin
             tx_en = 0;
             if(!tx_busy && bufferpos < 2)begin
@@ -196,6 +193,7 @@ always @* begin
                 end
             end
         end
+
         READ_GET_BYTE:begin
             tx_en = 0;
             if(rx_rdy && bufferpos <= memory_end)begin
