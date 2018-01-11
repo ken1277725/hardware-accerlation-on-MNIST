@@ -1,52 +1,5 @@
 
 
-module clock_divider(clk_div,clk);
-    parameter n = 4;
-    
-    input clk;
-    output clk_div;
-
-    reg [n-1:0] num;
-    wire [n-1:0] next_num;
-
-    always @(posedge clk) begin
-        num <= next_num;
-    end
-
-    assign next_num = num + 1;
-    assign clk_div = num[n-1];
-endmodule
-
-
-module baud_clock_divider (
-    input wire clk,
-    input wire reset,
-    output reg PWM
-);
-
-	wire [31:0] count_max = 651;
-	wire [31:0] count_duty = 325;
-	reg [31:0] count;
-	    
-	always @(posedge clk, posedge reset) begin
-	    if (reset) begin
-	        count <= 0;
-	        PWM <= 0;
-	    end else if (count < count_max) begin
-	        count <= count + 1;
-			if(count < count_duty)
-	            PWM <= 1;
-	        else
-	            PWM <= 0;
-	    end else begin
-	        count <= 0;
-	        PWM <= 0;
-	    end
-	end
-
-endmodule
-
-
 module receiver(
 	input wire rx,
 	input wire rst,
@@ -213,11 +166,12 @@ module rs232(
     input wire tx_busy,
 
     output wire rxdata_rdy,
-    output wire [7:0] rxdata
+    output wire [7:0] rxdata,
+
+    output wire clk_9600
 );
 
 
-wire clk_9600;
 baud_clock_divider CD9600(clk,rst,clk_9600_16);
 clock_divider CD16(clk_9600,clk_9600_16);
 
