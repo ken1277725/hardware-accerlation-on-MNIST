@@ -1,10 +1,18 @@
 
-module memory (
+module Main(
+    input clk,
+    input reset,
+    
     input rx,
     output tx
-);
-    parameter IntSize = 8;
-    
+); 
+    //parameter bandWidth = 128;    d
+    parameter IntSize   =   8;
+    parameter CoreSize  =  25;
+    parameter PicSize1  = 784;
+    parameter PicSize2  = 196;
+    parameter PicSize3  =  49;
+
     wire [7:0] rx_data;
     wire tx_busy,rx_rdy;
     reg [7:0] tx_data;
@@ -23,49 +31,11 @@ module memory (
         .rxdata(rx_data),
         .rxdata_rdy(rx_rdy)
     );
-    
+
     reg [IntSize-1:0] file [0:1];
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI({file[0],file[1]},file_size,memory_start,memory_end);
-    
-    reg [IntSize-1:0] memory [0:1600];
-    reg [IntSize-1:0] next_memory [0:1600];
 
-    reg [5:0]main_tmp_state,next_main_tmp_state;
-    reg [5:0]upload_tmp_state,next_upload_tmp_state;
-    reg [5:0]state,next_state;
-    reg [7:0]bufferpos,next_bufferpos;
-    reg readwrite,next_readwrite; // read = 0
-    parameter READ = 0;
-    parameter WRITE = 1;
-   
-    clk = base_9600;
-    always @(*) begin
-        next_state = state;
-        next_main_tmp_state = main_tmp_state;
-        next_upload_tmp_state = upload_tmp_state;
-        next_bufferpos = bufferpos;
-        next_readwrite = readwrite;
-        case(state)
-
-        endcase 
-    end
-
-endmodule
-
-
-
-
-module PE1(clk , data ,fin , reset); 
-    //parameter bandWidth = 128;    d
-    parameter IntSize   =   8;
-    parameter CoreSize  =  25;
-    parameter PicSize1  = 784;
-    parameter PicSize2  = 196;
-    parameter PicSize3  =  49;
-    input clk;
-    input reset; 
-    output fin;
 
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
@@ -89,6 +59,14 @@ module PE1(clk , data ,fin , reset);
     parameter [4:0] FIN              = 5'd15;
     parameter [4:0] CAL_ADD          = 5'd16;
     parameter [4:0] CAL_MULTI        = 5'd17;
+    
+    reg [5:0]main_tmp_state,next_main_tmp_state;
+    reg [5:0]upload_tmp_state,next_upload_tmp_state;
+    reg [7:0]bufferpos,next_bufferpos;
+    reg readwrite,next_readwrite; // read = 0
+    parameter READ = 0;
+    parameter WRITE = 1;
+   
     reg [11:0] FileIndex    ,   n_FileIndex    ;
     reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
     reg [4:0] Temp_state    ,   n_Temp_state   ;
