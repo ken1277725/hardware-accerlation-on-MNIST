@@ -86,12 +86,12 @@ module Main(
 
 
     wire [15:0] file_size,memory_start,memory_end;
-    file_info FI(FileIndex,file_size,memory_start,memory_end);
+    file_info FI(FileIndex,memory_start,memory_end);
 
     //TOD ram memory 
 
-    reg [IntSize*2500-1:0] memory ;
-    reg [IntSize*2500-1:0] n_memory ;
+    reg [IntSize*2700-1:0] memory ;
+    reg [IntSize*2700-1:0] n_memory ;
 
     // Set memory for var
     // give the right var  //ref : http://goo.gl/5NgdCK
@@ -103,11 +103,11 @@ module Main(
     wire [IntSize*PicSize1-1:0] PictureAfterConv1        ;
     wire [IntSize*196-1:0] PictureAfterMaxpool1          ;
     
-    assign unprocessedPicture = memory[0:6271];            // Read only
-    assign Core1 = memory[6272:6471];                      // Read only
-    assign Conv1Bias = memory[6472:12743];                 // Read only
-    assign PictureAfterConv1 = memory[12744:19015];         // Write / Read 
-    assign PictureAfterMaxpool1 = memory[19016:20583];      // Write only
+    assign unprocessedPicture = memory[6271:0];            // Read only
+    assign Core1 = memory[6471:6272];                      // Read only
+    assign Conv1Bias = memory[12743:6472];                 // Read only
+    assign PictureAfterConv1 = memory[19015:12744];         // Write / Read 
+    assign PictureAfterMaxpool1 = memory[20583:19016];      // Write only
     //Stage 2 
     wire [IntSize*196-1:0] PictureAfterStage1           ;
     wire [IntSize*25-1 :0] Core2                        ;
@@ -116,12 +116,12 @@ module Main(
     wire [IntSize*196-1:0] PictureAfterConv2New          ;
     wire [IntSize*49-1 :0] PictureAfterMaxpool2          ;
 
-    assign PictureAfterStage1  = memory[0:1567]        ;   // Read only
-    assign Core2               = memory[1568:1767]     ;   // Read only 
-    assign Conv2Bias           = memory[1768:3335]     ;   // Read only
+    assign PictureAfterStage1  = memory[1567:0]        ;   // Read only
+    assign Core2               = memory[1767:1568]     ;   // Read only 
+    assign Conv2Bias           = memory[3335:1768]     ;   // Read only
     //PictureAfterConv2Old;                                 empty
-    assign PictureAfterConv2New = memory[4904:6471]  ;   // Write / Read 
-    assign PictureAfterMaxpool2 = memory[6472:6863]  ;   // Write only 
+    assign PictureAfterConv2New = memory[6471:4904]  ;   // Write / Read 
+    assign PictureAfterMaxpool2 = memory[6863:6472]  ;   // Write only 
    
     //Stage 3
     wire [IntSize*PicSize1-1:0] MatrixInput             ;
@@ -129,10 +129,10 @@ module Main(
     wire [IntSize*10-1:0      ] MartrixBias             ;
     wire [IntSize*10-1:0      ] Answer                   ;      
 
-    assign MatrixInput         = memory[0:6271]        ;   // Read only 
-    assign Matrix              = memory[6272:12543]    ;   // Read only
-    assign MartrixBias         = memory[12544:12623]   ;   // Read only 
-    assign Answer              = memory[12624:12703]   ;   // None
+    assign MatrixInput         = memory[6271:0]        ;   // Read only 
+    assign Matrix              = memory[12543:6272]    ;   // Read only
+    assign MartrixBias         = memory[12623:12544]   ;   // Read only 
+    assign Answer              = memory[12703:12624]   ;   // None
     
     //  FileInfo Module
     //reg [15:0] file,n_file;
