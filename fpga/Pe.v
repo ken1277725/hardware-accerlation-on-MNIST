@@ -25,7 +25,7 @@ module Main(
     wire clk_9600;
     rs232 RS232(
         .clk(clk),
-        .rst(rst),
+        .rst(reset),
         .rx(rx),
         .tx(tx),
 
@@ -38,10 +38,7 @@ module Main(
 
         .clk_9600(clk_9600)
     );
-    
-    //  FileInfo Module
-    wire [15:0] file_size,memory_start,memory_end;
-    file_info FI(file,file_size,memory_start,memory_end);
+   
 
     reg [2:0] stage , n_stage ;
     reg [4:0] state , n_state ;
@@ -98,6 +95,7 @@ module Main(
     // give the right var  //ref : http://goo.gl/5NgdCK
     //TODO: assign those val !!!!
     //Stage 1 
+    
     reg [IntSize*PicSize1-1:0] unprocessedPicture      ; 
     reg [IntSize*25-1 :0] Core1                   ;
     reg [IntSize*PicSize1-1:0] Conv1Bias               ;
@@ -118,7 +116,11 @@ module Main(
     reg [IntSize*10-1:0      ] MartrixBias        ;
     reg [IntSize*10-1:0      ] Answer             ;    
 
-
+ 
+    //  FileInfo Module
+    //reg [15:0] file,n_file;
+    wire [15:0] file_size,memory_start,memory_end;
+    file_info FI(FileIndex,memory_start,memory_end);
 //conv module 
 //data , dPstate , core ,out
 
@@ -127,7 +129,6 @@ module Main(
     
     conv28x28 c28(.data(unprocessedPicture),.dPstate(cal_cnt),.core(Core1),.out(out_c28));
     conv14x14 c14(.data(PictureAfterStage1),.dPstate(cal_cnt),.core(Core2),.out(out_c14));
-
 //maxpool module
     wire [IntSize-1:0] out_m14;
     wire [IntSize-1:0] out_m7 ;
@@ -139,27 +140,32 @@ always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-    // TODO 把這裡的變數弄好
+    // TODO ??��?�裡??��?�數弄好
     else begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
         cal_cnt     =   n_cal_cnt;
-        file        =   n_file ;
         upload_tmp_state = n_upload_tmp_state;
         bufferpos   =   n_bufferpos;
+        max         =   n_max;
+        ans         =   n_ans;
+        //file        =   n_file;
     end
 end
 
 
 always @* begin
+    n_ans       = ans       ;
+    n_max       = max       ;
     n_state     = state     ;
     n_Tcnter    = Tcnter    ;
     n_stage     = stage     ;
     n_cal_cnt   = cal_cnt   ;
+   // n_file      = file      ;
     // IO varibles default values
     tx_en = 0;
-    txdata = 0;
+    tx_data = 0;
     n_upload_tmp_state = upload_tmp_state;
     n_bufferpos = bufferpos;
     
@@ -186,7 +192,7 @@ always @* begin
 
         SEND_FILE_INDEX:begin
             if(!tx_busy && bufferpos < 2)begin
-                    tx_data = file[bufferpos<<3+7:bufferpos<<3];
+                    tx_data = FileIndex[bufferpos*8 +: 8];
                     n_bufferpos = bufferpos + 1;
                     n_state = WAIT_FOR_UPLOAD;
                     n_upload_tmp_state = SEND_FILE_INDEX;
