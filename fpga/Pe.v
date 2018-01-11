@@ -42,61 +42,9 @@ module Main(
     //  FileInfo Module
     wire [15:0] file_size,memory_start,memory_end;
     file_info FI(file,file_size,memory_start,memory_end);
-
-    reg [2:0] stage , n_stage ;
-    reg [4:0] state , n_state ;
-    reg [20:0] cal_cnt , n_cal_cnt ;
-
-    assign state_led = state;
     
-    //parameter for state : 
-    parameter [4:0] IDLE              = 5'd0;
-    parameter [4:0] STAGE1            = 5'd1;
-    parameter [4:0] IO                = 5'd2;
-    parameter [4:0] SEND_HEAD         = 5'd3;
-    parameter [4:0] SEND_FILE_INDEX   = 5'd4;
-    parameter [4:0] READ_GET_BYTE     = 5'd5;
-    parameter [4:0] WRITE_SEND_BYTE   = 5'd6;
-    parameter [4:0] WAIT_FOR_UPLOAD   = 5'd7;
-    parameter [4:0] CAL_CONV          = 5'd8;
-    parameter [4:0] CAL_MAXPOOL       = 5'd9;
-    parameter [4:0] STAGE1_CHECK_END = 5'd10;
-    parameter [4:0] STAGE2           = 5'd11;
-    parameter [4:0] STAGE2_CHECK_END = 5'd12;
-    parameter [4:0] STAGE3           = 5'd13;
-    parameter [4:0] STAGE3_CHECK_END = 5'd14;
-    parameter [4:0] FIN              = 5'd15;
-    parameter [4:0] CAL_ADD          = 5'd16;
-    parameter [4:0] CAL_MULTI        = 5'd17;
-    parameter [4:0] FIND_MAX         = 5'd18;
-    parameter [4:0] IO_FIN           = 5'd19;
-    
-    //TODO IO_CLK SHANGE
-    
-    reg [IntSize-1:0] n_max , max;
-    reg [3:0] n_ans , ans;
-    assign ANSWER = ans;
-    reg [5:0] upload_tmp_state  ,   n_upload_tmp_state;
-    reg [15:0] bufferpos         ,   n_bufferpos       ;
-   
-    reg [15:0] FileIndex    ,   n_FileIndex    ;
-    reg [4:0] Temp_state    ,   n_Temp_state   ;
-    reg [20:0] Tcnter       ,   n_Tcnter       ;
-    
-    reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
-    parameter READ = 2'b10;
-    parameter WRITE = 2'b01;
+    // Conv Modules
 
-    //TOD ram memory 
-
-    reg [IntSize-1:0] memory [0:2500];
-    reg [IntSize-1:0] n_memory [0:2500];
-    reg [2501 * IntSize-1 :0 ] ram   ;
-
-    // ram = {memory[0],memory[1]};
-    // Set memory for var
-    // give the right var  //ref : http://goo.gl/5NgdCK
-    //TODO: assign those val !!!!
     //Stage 1 
     reg [IntSize*PicSize1-1:0] unprocessedPicture      ; 
     reg [IntSize*25-1 :0] Core1                   ;
@@ -135,11 +83,65 @@ module Main(
     maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.out(out_m14))  ;
     maxpool7x7    m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.out(out_m7));
 
+    assign state_led = state;
+    
+    //parameter for state : 
+    parameter [4:0] IDLE              = 5'd0;
+    parameter [4:0] STAGE1            = 5'd1;
+    parameter [4:0] IO                = 5'd2;
+    parameter [4:0] SEND_HEAD         = 5'd3;
+    parameter [4:0] SEND_FILE_INDEX   = 5'd4;
+    parameter [4:0] READ_GET_BYTE     = 5'd5;
+    parameter [4:0] WRITE_SEND_BYTE   = 5'd6;
+    parameter [4:0] WAIT_FOR_UPLOAD   = 5'd7;
+    parameter [4:0] CAL_CONV          = 5'd8;
+    parameter [4:0] CAL_MAXPOOL       = 5'd9;
+    parameter [4:0] STAGE1_CHECK_END = 5'd10;
+    parameter [4:0] STAGE2           = 5'd11;
+    parameter [4:0] STAGE2_CHECK_END = 5'd12;
+    parameter [4:0] STAGE3           = 5'd13;
+    parameter [4:0] STAGE3_CHECK_END = 5'd14;
+    parameter [4:0] FIN              = 5'd15;
+    parameter [4:0] CAL_ADD          = 5'd16;
+    parameter [4:0] CAL_MULTI        = 5'd17;
+    parameter [4:0] FIND_MAX         = 5'd18;
+    parameter [4:0] IO_FIN           = 5'd19;
+    
+    reg [2:0] stage , n_stage ;
+    reg [4:0] state , n_state ;
+    reg [20:0] cal_cnt , n_cal_cnt ;
+    
+    //TODO IO_CLK SHANGE
+    
+    reg [IntSize-1:0] n_max , max;
+    reg [3:0] n_ans , ans;
+    assign ANSWER = ans;
+    reg [5:0] upload_tmp_state  ,   n_upload_tmp_state;
+    reg [15:0] bufferpos         ,   n_bufferpos       ;
+   
+    reg [15:0] FileIndex    ,   n_FileIndex    ;
+    reg [4:0] Temp_state    ,   n_Temp_state   ;
+    reg [20:0] Tcnter       ,   n_Tcnter       ;
+    
+    reg [1:0]  ReadWrite    ,   n_ReadWrite    ;
+    parameter READ = 2'b10;
+    parameter WRITE = 2'b01;
+
+    //TOD ram memory 
+
+    reg [IntSize-1:0] memory [0:2500];
+    reg [IntSize-1:0] n_memory [0:2500];
+    reg [2501 * IntSize-1 :0 ] ram   ;
+
+    // ram = {memory[0],memory[1]};
+    // Set memory for var
+    // give the right var  //ref : http://goo.gl/5NgdCK
+    //TODO: assign those val !!!!
+
 always @(posedge clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
-    // TODO 把這裡的變數弄好
     else begin
         state       =   n_state;
         Tcnter      =   n_Tcnter;
