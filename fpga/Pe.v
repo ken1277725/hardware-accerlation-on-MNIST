@@ -90,8 +90,8 @@ module Main(
 
     //TOD ram memory 
 
-    reg [IntSize*2700-1:0] memory ;
-    reg [IntSize*2700-1:0] n_memory ;
+    reg [IntSize*2600-1:0] memory ;
+    reg [IntSize*2600-1:0] n_memory ;
 
     // Set memory for var
     // give the right var  //ref : http://goo.gl/5NgdCK
@@ -105,52 +105,21 @@ module Main(
     
     assign unprocessedPicture = memory[6271:0];            // Read only
     assign Core1 = memory[6471:6272];                      // Read only
-    assign Conv1Bias = memory[12743:6472];                 // Read only
     assign PictureAfterConv1 = memory[19015:12744];         // Write / Read 
     assign PictureAfterMaxpool1 = memory[20583:19016];      // Write only
-    //Stage 2 
-    wire [IntSize*196-1:0] PictureAfterStage1           ;
-    wire [IntSize*25-1 :0] Core2                        ;
-    wire [IntSize*196-1:0] Conv2Bias                    ;
-    wire [IntSize*196-1:0] PictureAfterConv2Old          ;
-    wire [IntSize*196-1:0] PictureAfterConv2New          ;
-    wire [IntSize*49-1 :0] PictureAfterMaxpool2          ;
-
-    assign PictureAfterStage1  = memory[1567:0]        ;   // Read only
-    assign Core2               = memory[1767:1568]     ;   // Read only 
-    assign Conv2Bias           = memory[3335:1768]     ;   // Read only
-    //PictureAfterConv2Old;                                 empty
-    assign PictureAfterConv2New = memory[6471:4904]  ;   // Write / Read 
-    assign PictureAfterMaxpool2 = memory[6863:6472]  ;   // Write only 
    
-    //Stage 3
-    wire [IntSize*PicSize1-1:0] MatrixInput             ;
-    wire [IntSize*PicSize1-1:0] Matrix                  ;
-    wire [IntSize*10-1:0      ] MartrixBias             ;
-    wire [IntSize*10-1:0      ] Answer                   ;      
-
-    assign MatrixInput         = memory[6271:0]        ;   // Read only 
-    assign Matrix              = memory[12543:6272]    ;   // Read only
-    assign MartrixBias         = memory[12623:12544]   ;   // Read only 
-    assign Answer              = memory[12703:12624]   ;   // None
-    
     //  FileInfo Module
     //reg [15:0] file,n_file;
     //conv module 
     //data , dPstate , core ,out
 
     wire [IntSize-1:0] out_c28;
-    wire [IntSize-1:0] out_c14;
     
     conv28x28 c28(.data(unprocessedPicture),.dPstate(cal_cnt),.core(Core1),.out(out_c28));
-    conv14x14 c14(.data(PictureAfterStage1),.dPstate(cal_cnt),.core(Core2),.out(out_c14));
-
 //maxpool module
     wire [IntSize-1:0] out_m14;
-    wire [IntSize-1:0] out_m7 ;
     
     maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.out(out_m14))  ;
-    maxpool7x7    m7(.data(PictureAfterConv2New),.maxPoolState(cal_cnt),.out(out_m7));
 
 always @(posedge clk or posedge reset ) begin
     if(reset)begin
@@ -265,17 +234,6 @@ always @* begin
                     n_state = STAGE1_CHECK_END;
                 end
             end
-            //14*14 CONV
-            else if(stage == 2) begin
-                if(cal_cnt<196) begin
-                    n_cal_cnt = cal_cnt + 1;
-                    //Warning -> tihs may cause defects ! 
-                    n_memory[(613+cal_cnt)<<3 +: 8] = memory[(613+cal_cnt)<<3 +: 8] + out_c14; 
-                end
-                else begin
-                    n_state = STAGE2_CHECK_END;
-                end
-            end
         end
         CAL_MAXPOOL:begin
             //28*28 MAXPOOL
@@ -287,56 +245,6 @@ always @* begin
                 else begin
                     n_state = STAGE1_CHECK_END;
                 end
-            end
-            //14*14 MAX_POOL
-            else if(stage == 2) begin
-                if(cal_cnt<196) begin
-                    n_cal_cnt = cal_cnt + 1;
-                    n_memory[(809+cal_cnt)<<3 +: 8] = out_m7;
-                end
-                else begin
-                    n_state = STAGE2_CHECK_END;
-                end
-            end
-        end
-        CAL_ADD:begin
-            if(stage == 1 )begin
-                if(cal_cnt<784) begin
-                    n_cal_cnt = cal_cnt + 1;
-                    n_memory[(cal_cnt+1593)<<3 +: 8] = memory[(cal_cnt+1593)<<3 +: 8] + memory[(809)<<3 +: 8];    
-                end
-                else begin
-                    n_state = STAGE1_CHECK_END;
-                end
-            end
-            else if(stage == 2)begin
-                if(cal_cnt<196) begin
-                    n_cal_cnt = cal_cnt + 1;
-                    n_memory[(cal_cnt+613)<<3 +: 8] = memory[(cal_cnt+613)<<3 +: 8] + memory[(221)<<3 +: 8];    
-                end
-                else begin
-                    n_state = STAGE2_CHECK_END;
-                end
-            end
-            else if(stage == 3) begin
-                if(cal_cnt<10) begin
-                    n_cal_cnt = cal_cnt + 1 ;
-                    n_memory[(1578+cal_cnt )<<3 +: 8] = memory[(1578+cal_cnt)<<3 +: 8] + memory[(1568+cal_cnt)<<3 +: 8]; 
-                end
-                else begin
-                    n_state = STAGE3_CHECK_END;
-                end
-            end
-        end
-        CAL_MULTI:begin
-            if(cal_cnt<784)begin
-                n_cal_cnt = cal_cnt ; 
-                n_memory[(Tcnter[20:3]+1578 )<<3 +: 8] 
-                = memory[(Tcnter[20:3]+1578 )<<3 +: 8]
-                 + memory[(cal_cnt)<<3 +: 8] * memory[(cal_cnt + 784 )<<3 +: 8];
-            end
-            else begin
-                n_state = STAGE3_CHECK_END ;
             end
         end
 
@@ -361,24 +269,8 @@ always @* begin
                 n_Temp_state= CAL_CONV      ;
                 n_state     = IO            ;
             end
-            else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==1)begin
-                //load bias 
-                
-                n_Tcnter     = Tcnter +1     ;
-                n_FileIndex  = 17+Tcnter[20:1]; // 33 ~ 64  => (T/2) + 17
-                n_ReadWrite  = 2'b10         ;
-                n_Temp_state = STAGE1        ;
-                n_state      = IO            ; 
-            end
-            //load Picture After Conv 1 
-            else if(32<Tcnter && Tcnter <=96 && Tcnter[0]==0)begin    
-                //load Picture After Conv1 and calculate bias 
-                
-                //n_Tcnter
-                n_FileIndex  = 49+Tcnter[20:1]; // 65 ~ 96 => (T/2)+49
-                n_ReadWrite  = 2'b10         ;
-                n_Temp_state = CAL_ADD       ; 
-                n_state      = IO            ; 
+            else if(32<Tcnter && Tcnter <=96)begin
+                n_Tcnter = Tcnter + 1 ;
             end
             //MAXPOOL
             else if(96<Tcnter && Tcnter <= 128)begin
@@ -430,181 +322,8 @@ always @* begin
                 n_Tcnter    = 0    ;           //finish
                 n_FileIndex  = Tcnter        ; // save at 128
                 n_ReadWrite  = 2'b01         ;
-                n_Temp_state = STAGE2        ;
+                n_Temp_state = FIN        ;
                 n_state      = IO            ;    
-            end
-        end
-
-        STAGE2:begin
-            n_stage = 2 ;
-            n_cal_cnt   = 0         ;
-            if(Tcnter[0]==0)begin               //unused for Tcnter 0 
-                n_Tcnter    = Tcnter + 1    ;
-                n_state     = STAGE2        ;
-            end
-
-            else if(0<Tcnter&&Tcnter<=4096)begin
-                
-                if(Tcnter[0]==1)begin
-                    //load PicAfterStage 
-
-                    n_Tcnter = Tcnter +1    ;
-                    n_FileIndex = Tcnter[5:1]+129;  //load 129~160 (T%64/2)+129
-                    n_state  = IO           ;
-                    n_Temp_state = STAGE2   ;
-                    n_ReadWrite  = 2'b10    ;
-                end
-                else begin
-                     //load Core2
-                     
-                    //n_Tcnter
-                    n_FileIndex = Tcnter[20:1]+160; //load 161~2208 T/2+160  Warning !!
-                    n_state  = IO           ;
-                    n_Temp_state = CAL_CONV ;
-                    n_ReadWrite  = 2'b10    ;
-                end
-            end
-
-            else if(4096<Tcnter && Tcnter <=4224) begin
-            //load conv2_bias 
-                if(Tcnter[0] == 1)begin
-                    //load conv2_bias 
-            
-                    n_Tcnter    = Tcnter +1 ;
-                    n_FileIndex = Tcnter[20:1]+161; //load 2209 ~ 2272  => T/2+161  T / 2  -2048 + 2209
-                    n_state     = IO        ;
-                    n_ReadWrite = 2'b10     ;
-                    n_Temp_state= STAGE2    ;
-                end
-                else begin
-                    //load Picture After conv2_new
-
-                    //n_Tcnter 
-                    n_FileIndex = Tcnter[20:1]+225; //load 2274 ~ 2337 => T/2+225 T / 2 = 2049 ->2274 
-                    n_state     =  IO        ;
-                    n_ReadWrite = 2'b10      ;
-                    n_Temp_state= CAL_ADD    ;
-                end
-            end
-
-            //MAXPOOL
-            else if(4224<Tcnter && Tcnter <=4288) begin
-                //load PictureAfterConv2_new and MAXPOOL
-            
-                //n_Tcnter
-                n_FileIndex = Tcnter  - 1951 ; //load 2274 ~ 2337 => T-1951 : 4225-1951 = 2274  
-                n_state     = IO             ;
-                n_ReadWrite = 2'b10          ;
-                n_Temp_state= CAL_MAXPOOL    ;
-                n_cal_cnt   = 0             ;
-            end
-        end
-
-        STAGE2_CHECK_END:begin
-            //SAVE Wegiht 
-            if(0<Tcnter && Tcnter <= 4096)begin
-                n_Tcnter = Tcnter +1        ;
-                
-                if(Tcnter[6:0]==0)begin             //Tcnter % 64 =0
-                    //savePicAfterconv2 new  
-
-                    n_FileIndex = Tcnter[20:6]+2273; // 2274~2337
-                    n_state  = IO           ;
-                    n_Temp_state = STAGE2   ;
-                    n_ReadWrite  = 2'b01    ;
-                end 
-                else begin
-                    n_state = STAGE2        ;
-                end
-            end
-            //SAVE BIAS
-            else if(4096<Tcnter && Tcnter <=4224)begin
-                //savePicAfterconv2 new
-
-                n_Tcnter = Tcnter +1     ;
-                n_FileIndex = Tcnter[20:1]+225; //save 2274~ 2337 => T/2+225   T / 2 = 2049 ->2274 
-                n_state     =  IO        ;
-                n_ReadWrite = 2'b01      ;
-                n_Temp_state= STAGE2     ;
-            end
-            else if(4224<Tcnter && Tcnter <4288) begin
-                //save Picture After Maxpool2
-
-                n_Tcnter = Tcnter +1        ;
-                n_FileIndex = Tcnter  - 1887; // save 2338 ~ 2400 => T-1887
-                n_state     = IO            ;
-                n_ReadWrite = 2'b01         ;
-                n_Temp_state= STAGE2        ;
-            end
-            else if(Tcnter == 4288) begin
-                //save Picture After Maxpool2
-
-                n_Tcnter = 0       ;          //finished goto STAGE3 
-                n_FileIndex = Tcnter  - 1887; // save 2401  => T-1887
-                n_state     = IO            ;
-                n_ReadWrite = 2'b01         ;
-                n_Temp_state= STAGE3        ;
-            end
-        end
-
-        STAGE3:begin
-            n_stage = 3 ;
-            n_cal_cnt   = 0; 
-            if(Tcnter <80) begin
-                if(Tcnter[0] == 0 )begin
-                //load Matrix Input
-
-                    n_Tcnter = Tcnter +1            ;
-                    n_FileIndex = Tcnter[2:1] +2402 ;//load 2402~2405Tcnter%8/2 +2402
-                    n_state     = IO                ;
-                    n_ReadWrite = 2'b10             ;
-                    n_Temp_state= STAGE3            ; 
-                end
-                else if (Tcnter[0]==1) begin
-                    //load Matrix 
-
-                    //n_Tcnter
-                    n_FileIndex = Tcnter[20:1] +2406;// load 2406~2445 => Tcnter/2 + 2406
-                    n_state     = IO                ;
-                    n_ReadWrite = 2'b10             ;
-                    n_Temp_state= CAL_MULTI         ;
-                end
-            end
-            else if(Tcnter ==80) begin
-                //load Matrix bias
-
-                //n_Tcnter
-                n_FileIndex = 2446              ; // load 2446
-                n_state     = IO                ;
-                n_ReadWrite = 2'b10             ;
-                n_Temp_state= CAL_ADD           ; 
-            end
-        end
-
-        STAGE3_CHECK_END:begin
-            if(Tcnter < 80) begin
-                //No save , add in Answer 
-                
-                n_Tcnter = Tcnter +1            ;
-                n_state = STAGE3;
-
-            end
-            else begin
-                //No save , add in Answer 
-
-                n_bufferpos = 1578;
-                n_state = FIND_MAX;
-                n_max = 0;
-            end
-        end
-        FIND_MAX:begin
-            if(memory[bufferpos] > max)begin
-                n_max = memory[bufferpos];
-                n_ans = bufferpos - 1578;
-            end
-            n_bufferpos = bufferpos + 1;
-            if(bufferpos == 1587)begin
-                n_state = FIN;
             end
         end
 
