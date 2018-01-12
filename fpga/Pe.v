@@ -121,12 +121,15 @@ module Main(
     
     maxpool14x14 m14(.data(PictureAfterConv1),.maxPoolState(cal_cnt),.out(out_m14))  ;
 
-always @(posedge clk or posedge reset ) begin
+    wire FSM_clk;
+    assign FSM_clk = ( state == IO || state == SEND_HEAD || state == SEND_FILE_INDEX || state == READ_GET_BYTE || state == WRITE_SEND_BYTE || state == WAIT_FOR_UPLOAD  ) ? clk_9600 : clk;
+always @(posedge FSM_clk or posedge reset ) begin
     if(reset)begin
         state = IDLE;
     end
     // TODO ??��?�裡??��?�數弄好
     else begin
+    
         state       =   n_state;
         Tcnter      =   n_Tcnter;
         stage       =   n_stage ; 
@@ -137,11 +140,17 @@ always @(posedge clk or posedge reset ) begin
         ans         =   n_ans;
         memory      =   n_memory;
         //file        =   n_file;
+        FileIndex   = n_FileIndex;
+        ReadWrite =  n_ReadWrite;
+        Temp_state = n_Temp_state;
     end
 end
 
 
 always @* begin
+    n_Temp_state = Temp_state;
+    n_ReadWrite = ReadWrite;
+    n_FileIndex = FileIndex;
     n_ans       = ans       ;
     n_max       = max       ;
     n_state     = state     ;

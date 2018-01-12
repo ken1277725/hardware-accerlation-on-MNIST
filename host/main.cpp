@@ -14,6 +14,8 @@ compile with the command: gcc demo_tx.c rs232.c -Wall -Wextra -o2 -o test_tx
 #include <iostream>
 #include <fstream>
 #include <cstdint>
+#include <ctime>
+#include <bits/stdc++.h>
 using namespace std;
 
 #ifdef _WIN32
@@ -42,6 +44,20 @@ void waitms(clock_t ter){
 }
 
 
+#include <string>
+#include <sstream>
+
+namespace patch
+{
+    template < typename T > std::string to_string( const T& n )
+    {
+        std::ostringstream stm ;
+        stm << n ;
+        return stm.str() ;
+    }
+}
+
+
 int main(){
     int cport_nr=4,bdrate=9600;
     char mode[]="8N1";
@@ -58,14 +74,15 @@ int main(){
     while(1){
 
         GetSize = RS232_PollComport(cport_nr, &Mode, 1);
-            
+        cout << (int)Mode << ' ';
+
         if(Mode == 'R'){
             cout << "Curr Mode : Read \n";
             GetSize = RS232_PollComport(cport_nr, buffer , 2);
             FileIndex = *((int16_t *)(buffer));
             cout << "Read File : " << FileIndex << " \n";
             ifstream ifs;
-            ifs.open("file/" + to_string(FileIndex),ifstream::in);
+            ifs.open("file/" + patch::to_string(FileIndex),ifstream::in);
             char the;
             while(ifs >> the){
                 RS232_SendByte(cport_nr, the);
@@ -78,10 +95,10 @@ int main(){
             FileIndex = *((int16_t *)(buffer));
             cout << "Write File : " << FileIndex << " \n";
             ofstream ofs;
-            ofs.open("file/" + to_string(FileIndex),ofstream::out|ofstream::trunc);
-            sleep(1);
-            GetSize = RS232_PollComport(cport_nr, buffer , 1000);
+            ofs.open("file/" + patch::to_string(FileIndex),ofstream::out|ofstream::trunc);
             waitms(100);
+            GetSize = RS232_PollComport(cport_nr, buffer , 1000);
+
 
             cout << "Get : " << GetSize << " bytes";
             for (int i = 0; i < GetSize; i++) {
